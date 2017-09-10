@@ -92,7 +92,8 @@ public:
             AD<double> cte0 = vars[cte_start + t - 1];
             AD<double> epsi0 = vars[epsi_start + t - 1];
 
-            // Simplified way to handle latency.
+            // Simplified way to handle latency - we take actuations from
+            // two periods before.
             // Maybe it would be more elegant to handle it in main function?
             int delay;
             if (t > 1) {
