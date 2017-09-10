@@ -100,14 +100,14 @@ int main() {
 
           for(int i = 0; i < ptsx.size() ; ++i) {
               double delta_x = ptsx[i] - px;
-              double delta_y = ptsx[i] - py;
+              double delta_y = ptsy[i] - py;
 
               waypoints_x.push_back(cos(-psi) * delta_x - sin(-psi) * delta_y);
               waypoints_y.push_back(sin(-psi) * delta_x + cos(-psi) * delta_y);
           }
 
-          Eigen::VectorXd waypoints_eigen_x(waypoints_x.data(), waypoints_x.size());
-          Eigen::VectorXd waypoints_eigen_y(waypoints_y.data(), waypoints_y.size());
+          Eigen::Map<Eigen::VectorXd> waypoints_eigen_x(waypoints_x.data(), waypoints_x.size());
+          Eigen::Map<Eigen::VectorXd> waypoints_eigen_y(waypoints_y.data(), waypoints_y.size());
 
           auto coeffs = polyfit(waypoints_eigen_x, waypoints_eigen_y, 2);
           double cte = polyeval(coeffs, 0);
@@ -133,11 +133,11 @@ int main() {
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
-          for (int i = 2; i < vars.size(); i ++) {
+          for (int i = 2; i < solution.size(); i ++) {
               if (i % 2 == 0) {
-                  mpc_x_vals.push_back(vars[i]);
+                  mpc_x_vals.push_back(solution[i]);
                } else {
-                  mpc_y_vals.push_back(vars[i]);
+                  mpc_y_vals.push_back(solution[i]);
                }
           }
 
@@ -150,7 +150,10 @@ int main() {
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
-
+          for (double i = 0; i < 100; i += 3) {
+            next_x_vals.push_back(i);
+            next_y_vals.push_back(polyeval(coeffs, i));
+          }
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
 
