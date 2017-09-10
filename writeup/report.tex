@@ -1,0 +1,74 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+
+\begin{document}
+\section{How MPC works?}
+
+Controller gets reference path from path planner and it's job is to follow it.
+In our case the path is represented as waypoints, so we transform it to slightly
+more abstract representation by fitting a polynomial to it.
+
+
+Additionaly, the controller has a model of behaviour of the car. Using this
+model it can simulate what will happen with the car given current state and planned
+actuations. Based on this, within a window of prediciton, the controller chooses
+actions that minimize the cost. The cost is composed of many parts, penalizing various
+aspects of controller behaviour:
+\begin{itemize}
+    \item Most importantly, the "distance" from reference wanted state:
+    \begin{itemize}
+        \item distance from center of the track
+        \item distance from reference yaw
+        \item distance from reference velocity
+    \end{itemize}
+    \item Usage of actuators
+    \item Rate of change in usage of actuators
+\end{itemize}
+
+In order for controller to be successful, a balance has to be struck between
+all of these constraints.
+
+
+\section{Model}
+
+The vehicle state contains 6 variables:
+\begin{itemize}
+    \item $x$, $y$ -  position coordinates
+    \item $\psi$ - heading angle
+    \item $v$ - velocity
+    \item $cte$ - cross-track error
+    \item $e\psi$ - heading angle error
+\end{itemize}
+
+
+Controlable actuators are:
+\begin{itemize}
+    \item $\delta$ - steering angle
+    \item $a$ - acceleration
+\end{itemize}
+
+We update state based on simple kinematic model presented in the lectures:
+
+\begin{align}
+    x_{t+1} = x_t + v_t \cdot cos(\psi_t) \cdot dt \\
+    y_{t+1} = y_t + v_t \cdot sin(\psi_t) \cdot dt \\
+    \psi_{t+1} = \psi_t + \frac{v_t}{L_f} \cdot \delta_t \cdot dt \\
+    v_{t+1} = v_t + a_t \cdot dt \\
+    cte_{t+1} = f(x_t) - y_t + v_t \cdot sin(e\psi_t) \cdot dt \\
+    e\psi_{t+1} = \psi_t - \hat \psi_t + \frac{v_t}{L_f} \cdot \delta_t \cdot dt
+\end{align}
+
+The only preprocessing I do is transforming the waypoints into the vehicle coordinate system.
+
+\subsection{Choice of $N$ and $dt$}
+Part of the project is choice of the parameters $N$ and $dt$. Following the sugestion in the
+project statement, I have chosen $N = 10$ and $dt = 100 \text{ ms}$. Choosing $dt$ equal to
+the expected latency allows me to simplify how I handle latency a lot.
+
+\subsection{How to deal with latency?}
+I have chosen a very simple way of dealing latency. While calculating state,
+instead of using actuation values from one timestep before, I use actuations from two
+timesteps before. Timestep in MPC is chosen to be equal to expected latency of 100 ms.
+
+
+\end{document}
