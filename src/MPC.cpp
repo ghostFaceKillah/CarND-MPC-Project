@@ -42,10 +42,6 @@ public:
 
     typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
     void operator()(ADvector& fg, const ADvector& vars) {
-        // TODO: implement MPC
-        // `fg` a vector of the cost constraints, `vars` is a vector of variable values (state & actuators)
-        // NOTE: You'll probably go back and forth between this function and
-        // the Solver function below.
         AD<double> cost = 0;
 
         // Part based on reference state
@@ -57,13 +53,13 @@ public:
 
         // Penalize usage of actuators
         for (int t = 0; t < N - 1; ++t) {
-            cost += 100 * CppAD::pow(vars[delta_start + t], 2);
+            cost += 5 * CppAD::pow(vars[delta_start + t], 2);
             cost += CppAD::pow(vars[a_start + t], 2);
         }
 
         // Penalize differences between consecutive actuations
         for (int t = 0; t < N - 2; ++t) {
-            cost += 100 * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+            cost += CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
             cost += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
         }
 
