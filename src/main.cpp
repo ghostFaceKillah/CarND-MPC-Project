@@ -92,14 +92,34 @@ int main() {
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
 
-          /*
-          * TODO: Calculate steering angle and throttle using MPC.
-          *
-          * Both are in between [-1, 1].
-          *
-          */
-          double steer_value;
-          double throttle_value;
+          ///////// START 
+
+          // Transform waypoints in car coordinate system
+          vector<double> waypoints_x ;
+          vector<double> waypoints_y ;
+
+          for(int i = 0; i < ptsx.size() ; ++i) {
+              double delta_x = ptsx[i] - px;
+              double delta_y = ptsx[i] - py;
+
+              waypoints_x.push_back(cos(-psi) * delta_x - sin(-psi) * delta_y);
+              waypoints_y.push_back(sin(-psi) * delta_x + cos(-psi) * delta_y);
+          }
+
+          Eigen::VectorXd waypoints_eigen_x(waypoints_x.data(), waypoints_x.size());
+          Eigen::VectorXd waypoints_eigen_y(waypoints_y.data(), waypoints_y.size());
+
+          auto coeffs = polyfit(waypoints_eigen_x, waypoints_eigen_y, 2);
+          double cte = polyeval(coeffs, 0);
+          double eps = -atan(coeffs[1]);
+
+          Eigen::VectorXd state(6);
+          state << 0., 0., 0., v, cte, eps;
+          auto solution = mpc.Solve(state, coeffs);
+          double steer_value = -solution[0] / deg2rad(25);
+          double throttle_value = solution[1];
+
+          /////// END
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
@@ -113,6 +133,13 @@ int main() {
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
+          for (int i = 2; i < vars.size(); i ++) {
+              if (i % 2 == 0) {
+                  mpc_x_vals.push_back(vars[i]);
+               } else {
+                  mpc_y_vals.push_back(vars[i]);
+               }
+          }
 
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
